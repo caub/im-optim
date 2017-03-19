@@ -1,6 +1,6 @@
 {
   "name": "image-optim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "optimize png, jpeg",
   "main": "index.js",
   "scripts": {

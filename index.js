@@ -8,6 +8,9 @@ const optipng = require('optipng-bin'); // almost nothing, ~1% after pngquant
 const mozjpeg = require('mozjpeg');
 // const jpegtran = require('jpegtran-bin');
 
+/*
+todo refactor, to make it compatible with multiparty, with uploadDir: join(os.tmpdir(), '_something')
+*/
 
 // optimize image received from http req, return readable stream, typically you pipe it in a http response, or send it with fetch or knox
 // don't forget res.header('Content-Type', req.header('Content-Type'));
@@ -20,6 +23,30 @@ module.exports = function imageOptim(req) {
 	
 	switch (req.header('Content-Type')) {
 		case 'image/png':
+			if (req.query.optipng!==undefined) { // optipng only
+				return writeStream(req, path.join(folder, '1.png'))
+				.then(() => optiPng(folder, '1.png', '2.png'))
+				.then(() => {
+					const outStream = fs.createReadStream(path.join(folder, '2.png'));
+					outStream.on('end', ()=>{
+						fs.unlink(folder, () => {});
+					});
+					return outStream;
+				})
+				.catch( e => req);
+			}
+			if (req.query.pngquant!==undefined) { // pngquant only
+				return writeStream(req, path.join(folder, '1.png'))
+				.then(() => pngQuant(folder, '1.png', '3.png'))
+				.then(() => {
+					const outStream = fs.createReadStream(path.join(folder, '3.png'));
+					outStream.on('end', ()=>{
+						fs.unlink(folder, () => {});
+					});
+					return outStream;
+				})
+				.catch( e => req);
+			}
 			return writeStream(req, path.join(folder, '1.png'))
 			.then(() => optiPng(folder, '1.png', '2.png'))
 			.then(() => pngQuant(folder, '2.png', '3.png'))
@@ -80,6 +107,7 @@ function optiPng(folder, input, output) {
 		});
 	})
 }
+// '--skip-if-larger', could return empty file 
 function pngQuant(folder, input, output) {
 	return new Promise((resolve,reject) => {
 		execFile(pngquant, ['-o', path.join(folder, output), path.join(folder, input)], err => {

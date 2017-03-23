@@ -23,35 +23,13 @@ module.exports = function imageOptim(req) {
 	
 	switch (req.header('Content-Type')) {
 		case 'image/png':
-			if (req.query.optipng!==undefined) { // optipng only
-				return writeStream(req, path.join(folder, '1.png'))
-				.then(() => optiPng(folder, '1.png', '2.png'))
-				.then(() => {
-					const outStream = fs.createReadStream(path.join(folder, '2.png'));
-					outStream.on('end', ()=>{
-						fs.unlink(folder, () => {});
-					});
-					return outStream;
-				})
-				.catch( e => req);
-			}
-			if (req.query.pngquant!==undefined) { // pngquant only
-				return writeStream(req, path.join(folder, '1.png'))
-				.then(() => pngQuant(folder, '1.png', '3.png'))
-				.then(() => {
-					const outStream = fs.createReadStream(path.join(folder, '3.png'));
-					outStream.on('end', ()=>{
-						fs.unlink(folder, () => {});
-					});
-					return outStream;
-				})
-				.catch( e => req);
-			}
-			return writeStream(req, path.join(folder, '1.png'))
-			.then(() => optiPng(folder, '1.png', '2.png'))
-			.then(() => pngQuant(folder, '2.png', '3.png'))
+			const keys = Object.keys(req.query);
+			const fns = keys.length ? keys.map(k => handlerMap[k.toLowerCase()]).filter(x=>x) : [pngQuant, optiPng]; // specify order there ['pngquant', 'mozjpeg'] by default
+	
+			return fns.reduce((p, fn, i) => p.then(() => fn(folder, (i+1)+'.png', (i+2)+'.png'))
+				, writeStream(req, path.join(folder, '1.png')))
 			.then(() => {
-				const outStream = fs.createReadStream(path.join(folder, '3.png'));
+				const outStream = fs.createReadStream(path.join(folder, (fns.length+1)+'.png'));
 				outStream.on('end', ()=>{
 					fs.unlink(folder, () => {});
 				});
@@ -134,3 +112,7 @@ function mozJpeg(folder, input, output) {
 }
 //  execFile(jpegtran, ['-outfile', tempPath+'_', tempPath], err => { // 
 
+const handlerMap = {
+	pngquant: pngQuant,
+	optipng: optiPng
+}

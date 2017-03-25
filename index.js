@@ -1,12 +1,20 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const stream = require('stream');
 const {execFile} = require('child_process');
 const pngquant = require('pngquant-bin');
 const optipng = require('optipng-bin'); // almost nothing, ~1% after pngquant
 // const zopflipng = require('zopflipng-bin'); // optimize well, like 20% after pngquant, but really slow, ~20s per image
 const mozjpeg = require('mozjpeg');
 // const jpegtran = require('jpegtran-bin');
+const SVGO = require('svgo');
+
+const svgoOptions = {floatPrecision:2, multipass:true, plugins: [
+	// {mergePaths: false}, 
+	{removeUselessStrokeAndFill: {removeNone:true}},
+	{convertShapeToPath: false}
+]};
 
 /*
 todo refactor, to make it compatible with multiparty, with uploadDir: join(os.tmpdir(), '_something')
@@ -19,7 +27,6 @@ module.exports = function imageOptim(req) {
 
 	// req.pipe(res);
 	const folder = fs.mkdtempSync(path.join(os.tmpdir(), '_imgoptim_'));
-	const stream = fs.createWriteStream(path.join(folder, '1.png'));
 	
 	switch (req.header('Content-Type')) {
 		case 'image/png':
@@ -56,6 +63,20 @@ module.exports = function imageOptim(req) {
 				return req;
 			});
 
+		case 'image/svg+xml':
+			return readAsBuffer(req)
+			.then(buffer => {
+				const svgString = buffer.toString();
+				return new SVGO(svgoOptions).optim(svgString).then(svgjs => svgjs.data)
+			})
+			.then(svgStr => {
+				var s = new stream.Readable();
+				s._read = function noop() {};
+				s.push(svgStr);
+				s.push(null);
+				return s;
+			})
+
 		default: 
 			throw new Error('Content-Type not supported '+req.header('Content-Type'));
 	}
@@ -67,11 +88,23 @@ module.exports = function imageOptim(req) {
 
 function writeStream(req, path) {
 	return new Promise((resolve, reject) => {
-		const stream = fs.createWriteStream(path);
-		req.pipe(stream);
-		stream.on('finish', resolve);
+		const s = fs.createWriteStream(path);
+		req.pipe(s);
+		s.on('finish', resolve);
 	})
 }
+
+const readAsBuffer = (s, maxsize=1e7) =>
+	new Promise((resolve, reject) => {
+		const bufs = [];
+		s.on('data', d => {
+			bufs.push(d);
+			if (bufs.reduce((s,b)=>s+b.length) > maxsize) return reject(new AppError('File too large (10MB max'));
+		});
+		s.on('end', () => {
+			resolve(Buffer.concat(bufs));
+		});
+	});
 
 
 // if pngquant still fails, go back to execFile(pngquant, ['*.png', '--ext', '.png', '--force'], {cwd:folder}, err =>{})

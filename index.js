@@ -20,10 +20,13 @@ const svgoOptions = {floatPrecision:2, multipass:true, plugins: [
 todo refactor, to make it compatible with multiparty, with uploadDir: join(os.tmpdir(), '_something')
 */
 
+
+
+
 // optimize image received from http req, return readable stream, typically you pipe it in a http response, or send it with fetch or knox
 // don't forget res.header('Content-Type', req.header('Content-Type'));
 // would be really great to emscripten optipng, pngquant, and mozjpeg
-module.exports = function imageOptim(req) {
+function imageOptim(req) {
 
 	// req.pipe(res);
 	const folder = fs.mkdtempSync(path.join(os.tmpdir(), '_imgoptim_'));
@@ -33,15 +36,7 @@ module.exports = function imageOptim(req) {
 			const keys = Object.keys(req.query);
 			const fns = keys.length ? keys.map(k => handlerMap[k.toLowerCase()]).filter(x=>x) : [pngQuant, optiPng]; // specify order there ['pngquant', 'mozjpeg'] by default
 	
-			return fns.reduce((p, fn, i) => p.then(() => fn(folder, (i+1)+'.png', (i+2)+'.png'))
-				, writeStream(req, path.join(folder, '1.png')))
-			.then(() => {
-				const outStream = fs.createReadStream(path.join(folder, (fns.length+1)+'.png'));
-				outStream.on('end', ()=>{
-					fs.unlink(folder, () => {});
-				});
-				return outStream;
-			})
+			return pngOptimize(req, folder, fns)
 			.catch( e => {
 				console.error(e, 'OPTIM ERROR..TODO try again 1 or 2 times then return best attempt');
 				return req;
@@ -49,38 +44,60 @@ module.exports = function imageOptim(req) {
 
 		case 'image/jpeg':
 
-			return writeStream(req, path.join(folder, '1.jpg'))
-			.then(() => mozJpeg(folder, '1.jpg', 'mj.jpg'))
-			.then(() => {
-				const outStream = fs.createReadStream(path.join(folder, 'mj.jpg'));
-				outStream.on('end', ()=>{
-					fs.unlink(folder, () => {});
-				});
-				return outStream;
-			})
+			return jpgOptimize(req, folder)
 			.catch( e => {
 				console.error(e, 'OPTIM ERROR.. TODO try again 1 or 2 times then return best attempt');
 				return req;
 			});
 
 		case 'image/svg+xml':
-			return readAsBuffer(req)
-			.then(buffer => {
-				const svgString = buffer.toString();
-				return new SVGO(svgoOptions).optim(svgString).then(svgjs => svgjs.data)
-			})
-			.then(svgStr => {
-				var s = new stream.Readable();
-				s._read = function noop() {};
-				s.push(svgStr);
-				s.push(null);
-				return s;
-			})
+			return svgOptimize(req);
 
 		default: 
 			throw new Error('Content-Type not supported '+req.header('Content-Type'));
 	}
 };
+
+
+
+// take folder, input stream, optional list of optimizers and return output stream of optimized image
+const pngOptimize = (inputStream, folder, optimizers = [pngQuant, optiPng]) => optimizers.reduce(
+		(p, fn, i) => p.then(() => fn(folder, (i+1)+'.png', (i+2)+'.png')), writeStream(inputStream, path.join(folder, '1.png'))
+	)
+	.then(() => {
+		const outStream = fs.createReadStream(path.join(folder, (optimizers.length+1)+'.png'));
+		outStream.on('end', () => {
+			fs.unlink(folder, () => {});
+		});
+		return outStream;
+	});
+
+
+// same for jpg
+const jpgOptimize = (inputStream, folder) => writeStream(inputStream, path.join(folder, '1.jpg'))
+	.then(() => mozJpeg(folder, '1.jpg', 'mj.jpg'))
+	.then(() => {
+		const outStream = fs.createReadStream(path.join(folder, 'mj.jpg'));
+		outStream.on('end', ()=>{
+			fs.unlink(folder, () => {});
+		});
+		return outStream;
+	});
+
+
+
+const svgOptimize = inputStream => readAsBuffer(inputStream)
+	.then(buffer => {
+		const svgString = buffer.toString();
+		return new SVGO(svgoOptions).optim(svgString).then(svgjs => svgjs.data)
+	})
+	.then(svgStr => {
+		var s = new stream.Readable();
+		s._read = function noop() {};
+		s.push(svgStr);
+		s.push(null);
+		return s;
+	});
 
 
 
@@ -149,3 +166,6 @@ const handlerMap = {
 	pngquant: pngQuant,
 	optipng: optiPng
 }
+
+
+module.exports = Object.assign(imageOptim, {pngOptimize, jpgOptimize, svgOptimize});

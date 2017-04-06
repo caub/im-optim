@@ -67,7 +67,8 @@ const pngOptimize = (inputStream, folder, optimizers = [pngQuant, optiPng]) => o
 	.then(() => {
 		const outStream = fs.createReadStream(path.join(folder, (optimizers.length+1)+'.png'));
 		outStream.on('end', () => {
-			fs.unlink(folder, () => {});
+			Promise.all(Array.from({length: optimizers.length+1}, (_,i)=>unlink(path.join(folder, (i+1)+'.png'))))
+			.then(() => fs.unlink(folder, () => {}));
 		});
 		return outStream;
 	});
@@ -79,7 +80,8 @@ const jpgOptimize = (inputStream, folder) => writeStream(inputStream, path.join(
 	.then(() => {
 		const outStream = fs.createReadStream(path.join(folder, 'mj.jpg'));
 		outStream.on('end', ()=>{
-			fs.unlink(folder, () => {});
+			Promise.all([path.join(folder, '1.jpg'), path.join(folder, 'mj.jpg')].map(unlink))
+			.then(() => fs.unlink(folder, () => {}));
 		});
 		return outStream;
 	});
@@ -100,7 +102,10 @@ const svgOptimize = inputStream => readAsBuffer(inputStream)
 	});
 
 
-
+const unlink = path =>
+	new Promise((resolve, reject) => {
+		fs.unlink(path, err => err ? reject(err) : resolve());
+	})
 
 
 function writeStream(req, path) {

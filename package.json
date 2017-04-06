@@ -4,7 +4,7 @@
   "description": "optimize png, jpeg",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./test/"
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,7 @@
     "pngquant-bin": "^3.1.1",
     "svgo": "github:caub/svgo#browser"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "node-fetch": "^1.6.3"
+  }
 }

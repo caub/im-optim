@@ -30,8 +30,9 @@ function imageOptim(req) {
 
 	// req.pipe(res);
 	const folder = fs.mkdtempSync(path.join(os.tmpdir(), '_imgoptim_'));
+	const type = req.headers['content-type']; // todo test other possib like headers.get() for fetch
 	
-	switch (req.header('Content-Type')) {
+	switch (type) {
 		case 'image/png':
 			const keys = Object.keys(req.query);
 			const fns = keys.length ? keys.map(k => handlerMap[k.toLowerCase()]).filter(x=>x) : [pngQuant, optiPng]; // specify order there ['pngquant', 'mozjpeg'] by default
@@ -54,7 +55,7 @@ function imageOptim(req) {
 			return svgOptimize(req);
 
 		default: 
-			throw new Error('Content-Type not supported '+req.header('Content-Type'));
+			throw new Error('Content-Type not supported '+type);
 	}
 };
 
@@ -68,7 +69,7 @@ const pngOptimize = (inputStream, folder, optimizers = [pngQuant, optiPng]) => o
 		const outStream = fs.createReadStream(path.join(folder, (optimizers.length+1)+'.png'));
 		outStream.on('end', () => {
 			Promise.all(Array.from({length: optimizers.length+1}, (_,i)=>unlink(path.join(folder, (i+1)+'.png'))))
-			.then(() => fs.unlink(folder, () => {}));
+			.then(() => fs.rmdir(folder, () => {}));
 		});
 		return outStream;
 	});
@@ -81,7 +82,7 @@ const jpgOptimize = (inputStream, folder) => writeStream(inputStream, path.join(
 		const outStream = fs.createReadStream(path.join(folder, 'mj.jpg'));
 		outStream.on('end', ()=>{
 			Promise.all([path.join(folder, '1.jpg'), path.join(folder, 'mj.jpg')].map(unlink))
-			.then(() => fs.unlink(folder, () => {}));
+			.then(() => fs.rmdir(folder, () => {}));
 		});
 		return outStream;
 	});

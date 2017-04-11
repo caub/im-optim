@@ -106,7 +106,7 @@ const svgOptimize = inputStream => readAsBuffer(inputStream)
 const unlink = path =>
 	new Promise((resolve, reject) => {
 		fs.unlink(path, err => err ? reject(err) : resolve());
-	})
+	});
 
 
 function writeStream(req, path) {

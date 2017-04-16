@@ -35,7 +35,7 @@ function imageOptim(req) {
 	switch (type) {
 		case 'image/png':
 			const keys = Object.keys(req.query);
-			const fns = keys.length ? keys.map(k => handlerMap[k.toLowerCase()]).filter(x=>x) : [pngQuant, optiPng]; // specify order there ['pngquant', 'mozjpeg'] by default
+			const fns = keys.length ? keys.map(k => handlerMap[k.toLowerCase()]).filter(x=>x) : [pngQuant, optiPng]; // specify order there ['pngquant', 'optipng'] by default
 	
 			return pngOptimize(req, folder, fns)
 			.catch( e => {
@@ -141,7 +141,7 @@ function optiPng(folder, input, output) {
 		});
 	})
 }
-// '--skip-if-larger', could return empty file 
+// '--skip-if-larger', could return empty file, '--nofs' for no dithering
 function pngQuant(folder, input, output) {
 	return new Promise((resolve,reject) => {
 		execFile(pngquant, ['-o', path.join(folder, output), path.join(folder, input)], err => {

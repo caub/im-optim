@@ -1,29 +1,33 @@
 {
-  "name": "image-optim",
+  "name": "im-optim",
   "version": "1.0.1",
-  "description": "optimize png, jpeg",
+  "description": "optimize png, jpeg and svg images",
   "main": "index.js",
   "scripts": {
     "test": "node ./test/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caub/image-optim.git"
+    "url": "git+https://github.com/caub/im-optim.git"
   },
   "keywords": [
     "image",
+    "jpg",
+    "png",
+    "svg",
     "optimization"
   ],
   "author": "Cyril Auburtin <cyril.auburtin@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/caub/image-optim/issues"
+    "url": "https://github.com/caub/im-optim/issues"
   },
-  "homepage": "https://github.com/caub/image-optim#readme",
+  "homepage": "https://github.com/caub/im-optim#readme",
   "dependencies": {
     "mozjpeg": "^4.1.1",
     "optipng-bin": "^3.1.2",
     "pngquant-bin": "^3.1.1",
+    "read-as-buffer": "^1.0.0",
     "svgo": "github:caub/svgo#browser"
   },
   "devDependencies": {

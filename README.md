@@ -9,10 +9,10 @@ uses:
 
 ```js
 var imOptim = require('im-optim');
-// imOptim(stream [, contentType]) -> {stream:optimizedStream, size}
-// imOptim.pngOptim(stream) -> {stream:optimizedStream, size}
-// imOptim.jpgOptim(stream) -> {stream:optimizedStream, size}
-// imOptim.svgOptim(stream) -> {stream:optimizedStream, size}
+// imOptim(streamOrBuffer [, contentType]) -> {stream:optimizedStream, size}
+// imOptim.pngOptim(streamOrBuffer) -> {stream:optimizedStream, size}
+// imOptim.jpgOptim(streamOrBuffer) -> {stream:optimizedStream, size}
+// imOptim.svgOptim(streamOrBuffer) -> {stream:optimizedStream, size}
 
 ```
 

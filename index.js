@@ -46,7 +46,7 @@ function imOptim(stream, type=stream.headers&&stream.headers['content-type']) {
 // optimizers per type: they take a stream, return {stream, size}
 
 const jpgOptim = (stream, folder = tmpFolder()) => 
-	writeStream(stream, path.join(folder, '1'))
+	writeFile(stream, path.join(folder, '1'))
 	.then(() => mozJpeg(folder, '1', '2'))
 	.then(() => Promise.all([
 		getSize(path.join(folder, '1')),
@@ -66,7 +66,7 @@ const jpgOptim = (stream, folder = tmpFolder()) =>
 
 
 const pngOptim = (stream, folder = tmpFolder()) => 
-	writeStream(stream, path.join(folder, '1'))
+	writeFile(stream, path.join(folder, '1'))
 	.then(() => pngQuant(folder, '1', '2'))
 	.then(() => optiPng(folder, '2', '3'))
 	.then(() => Promise.all([
@@ -117,8 +117,9 @@ const optimizers = new Map([
 // 	});
 
 
-const writeStream = (stream, path) => 
+const writeFile = (stream, path) => 
 	new Promise((resolve, reject) => {
+		if (stream instanceof Buffer) return fs.writeFile(path, stream, (err) => err?reject(err) : resolve());
 		const s = fs.createWriteStream(path);
 		stream.pipe(s);
 		s.on('finish', resolve);

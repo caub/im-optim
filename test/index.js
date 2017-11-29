@@ -1,7 +1,7 @@
 const path = require('path');
 const fs  = require('fs');
 const assert = require('assert');
-const imOptim = require('../');
+const imOptim = require('..');
 
 const rs = fs.createReadStream(path.join(__dirname, 'photo.png'));
 
@@ -13,7 +13,9 @@ imOptim(rs, 'image/png').then(({stream, size}) => {
 		fs.unlinkSync(path.join(__dirname, 'photo.min.png'));
 
 	})
-}).catch(console.error);
+})
+.then(() => console.log('PNG optimization successful'))
+.catch(console.error);
 
 
 const rs2 = fs.createReadStream(path.join(__dirname, 'shape.svg'));
@@ -26,4 +28,6 @@ imOptim(rs2, 'image/svg+xml').then(({stream, size}) => {
 		fs.unlinkSync(path.join(__dirname, 'shape.min.svg'));
 
 	})
-}).catch(console.error);
+})
+.then(() => console.log('SVG optimization successful'))
+.catch(console.error);

@@ -1,11 +1,14 @@
 {
   "name": "im-optim",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "optimize png, jpeg and svg images",
   "main": "index.js",
   "scripts": {
-    "test": "node ./test/"
+    "test": "node test"
   },
+  "files": [
+    "index.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/caub/im-optim.git"
@@ -24,11 +27,11 @@
   },
   "homepage": "https://github.com/caub/im-optim#readme",
   "dependencies": {
+    "as-buffer": "^1.4.1",
     "mozjpeg": "^4.1.1",
-    "optipng-bin": "^3.1.2",
+    "optipng-bin": "^4.0.0",
     "pngquant-bin": "^3.1.1",
-    "read-as-buffer": "^1.0.0",
-    "svgo": "github:caub/svgo#browser"
+    "svgo": "^1.0.3"
   },
   "devDependencies": {
     "node-fetch": "^1.6.3"

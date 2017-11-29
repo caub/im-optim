@@ -7,7 +7,7 @@ const pngquant = require('pngquant-bin');
 const optipng = require('optipng-bin'); // almost nothing, ~1% after pngquant
 // const zopflipng = require('zopflipng-bin'); // optimize well, like 20% after pngquant, but really slow, ~20s per image
 const mozjpeg = require('mozjpeg');
-const readAsBuffer = require('read-as-buffer');
+const asBuffer = require('as-buffer');
 // const jpegtran = require('jpegtran-bin');
 const SVGO = require('svgo');
 
@@ -16,10 +16,6 @@ const svgoOptions = {floatPrecision:2, multipass:true, plugins: [
 	{removeUselessStrokeAndFill: {removeNone:true}},
 	{convertShapeToPath: false}
 ]};
-
-/*
-todo refactor, to make it compatible with multiparty, with uploadDir: join(os.tmpdir(), '_something')
-*/
 
 const tmpFolder = () => fs.mkdtempSync(path.join(os.tmpdir(), '_imoptim_'));
 
@@ -90,10 +86,10 @@ const pngOptim = (stream, folder = tmpFolder()) =>
 	});
 
 
-const svgOptim = stream => readAsBuffer(stream)
+const svgOptim = stream => asBuffer(stream)
 	.then(buffer => {
 		const svgString = buffer.toString();
-		return new SVGO(svgoOptions).optim(svgString).then(svgjs => svgjs.data)
+		return new SVGO(svgoOptions).optimize(svgString).then(svgjs => svgjs.data)
 	})
 	.then(svgStr => {
 		var s = new Readable();
@@ -119,7 +115,7 @@ const optimizers = new Map([
 
 const writeFile = (stream, path) => 
 	new Promise((resolve, reject) => {
-		if (stream instanceof Buffer) return fs.writeFile(path, stream, (err) => err?reject(err) : resolve());
+		if (Buffer.isBuffer(stream)) return fs.writeFile(path, stream, (err) => err?reject(err) : resolve());
 		const s = fs.createWriteStream(path);
 		stream.pipe(s);
 		s.on('finish', resolve);
